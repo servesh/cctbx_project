@@ -161,6 +161,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                         LOOK_INTO(detector_thickstep)
                                         LOOK_INTO(detector_thick)
                                         LOOK_INTO(detector_mu)
+                                        LOOK_INTO(capture_fraction)
                                         if (detector_thick > 0.0 && detector_mu> 0.0) {
                                                 // inverse of effective thickness increase
                                                 CUDAREAL odet[4];
@@ -171,7 +172,8 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 LOOK_INTO(parallax)
                                                 capture_fraction = exp(-thick_tic * detector_thickstep / detector_mu / parallax)
                                                                 - exp(-(thick_tic + 1) * detector_thickstep / detector_mu / parallax);
-                                        } LOOK_INTO(capture_fraction)
+                                        } 
+                                        LOOK_INTO(capture_fraction)
 
                                         // loop over sources now
                                         int source;
@@ -306,6 +308,8 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 if (xtal_shape == GAUSS) {
                                                                         // fudge the radius so that volume and FWHM are similar to square_xtal spots
                                                                         F_latt = Na * Nb * Nc * exp(-(hrad_sqr / 0.63 * fudge));
+                                                                        LOOK_INTO(hrad_sqr)
+                                                                        LOOK_INTO(fudge)
                                                                 }
                                                                 if (xtal_shape == GAUSS_ARGCHK) {
                                                                         // fudge the radius so that volume and FWHM are similar to square_xtal spots
