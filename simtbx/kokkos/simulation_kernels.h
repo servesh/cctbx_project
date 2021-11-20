@@ -9,6 +9,9 @@ using simtbx::nanoBragg::GAUSS;
 using simtbx::nanoBragg::GAUSS_ARGCHK;
 using simtbx::nanoBragg::TOPHAT;
 
+#define LOOK_INTO(var) if (pixIdx == 297053) \
+        { printf("%d (%s): %.9E \n", __LINE__, #var, var); }
+
 void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
     int roi_ymin, int roi_ymax, int oversample, int point_pixel,
     CUDAREAL pixel_size, CUDAREAL subpixel_size, int steps, CUDAREAL detector_thickstep,
@@ -101,7 +104,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                 for (thick_tic = 0; thick_tic < detector_thicksteps; ++thick_tic) {
                                         // assume "distance" is to the front of the detector sensor layer
                                         CUDAREAL Odet = thick_tic * detector_thickstep; // Z Orthagonal voxel.
-
+                                        LOOK_INTO(Odet)
                                         // construct detector subpixel position in 3D space
                                         //                      pixel_X = distance;
                                         //                      pixel_Y = Sdet-Ybeam;
@@ -137,14 +140,14 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                         // construct the diffracted-beam unit vector to this sub-pixel
                                         //CUDAREAL * diffracted = tmpVector2;
                                         CUDAREAL diffracted[4];
-                                        CUDAREAL airpath = unitize(pixel_pos, diffracted);
+                                        CUDAREAL airpath = unitize(pixel_pos, diffracted); LOOK_INTO(airpath)
 
                                         // solid angle subtended by a pixel: (pix/airpath)^2*cos(2theta)
                                         CUDAREAL omega_pixel = pixel_size * pixel_size / airpath / airpath * close_distance / airpath;
                                         // option to turn off obliquity effect, inverse-square-law only
                                         if (point_pixel) {
                                                 omega_pixel = 1.0 / airpath / airpath;
-                                        }
+                                        } LOOK_INTO(omega_pixel)
 
                                         // now calculate detector thickness effects
                                         CUDAREAL capture_fraction = 1.0;
@@ -157,7 +160,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 CUDAREAL parallax = dot_product(odet, diffracted);
                                                 capture_fraction = exp(-thick_tic * detector_thickstep / detector_mu / parallax)
                                                                 - exp(-(thick_tic + 1) * detector_thickstep / detector_mu / parallax);
-                                        }
+                                        } LOOK_INTO(capture_fraction)
 
                                         // loop over sources now
                                         int source;
@@ -186,7 +189,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 #else
                                                 CUDAREAL stol = 0.5 * sqrt(scattering[1]*scattering[1] + scattering[2]*scattering[2] + scattering[3]*scattering[3]);
                                                 #endif
-
+                                                LOOK_INTO(stol)
                                                 // rough cut to speed things up when we aren't using whole detector
                                                 if (dmin > 0.0 && stol > 0.0) {
                                                         if (dmin > 0.5 / stol) {
@@ -200,7 +203,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                         polar = polarization_factor(polarization, incident, diffracted, polar_vector);
                                                 } else {
                                                         polar = 1.0;
-                                                }
+                                                } LOOK_INTO(polar)
 
                                                 // sweep over phi angles
                                                 for (int phi_tic = 0; phi_tic < phisteps; ++phi_tic) {
@@ -306,7 +309,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 // no need to go further if result will be zero?
                                                                 if (F_latt == 0.0 && water_size == 0.0)
                                                                         continue;
-
+                                                                LOOK_INTO(F_latt)
                                                                 // structure factor of the unit cell
                                                                 CUDAREAL F_cell = default_F;
                                                                 //F_cell = quickFcell_ldg(s_hkls, s_h_max, s_h_min, s_k_max, s_k_min, s_l_max, s_l_min, h0, k0, l0, s_h_range, s_k_range, s_l_range, default_F, Fhkl);
@@ -322,12 +325,12 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 } else {
                                                                         const int hkl_index = (h0-s_h_min)*s_k_range*s_l_range + (k0-s_k_min)*s_l_range + (l0-s_l_min);
                                                                         F_cell = Fhkl[hkl_index];
-                                                                }
+                                                                } LOOK_INTO(F_cell)
 
                                                                 // now we have the structure factor for this pixel
 
                                                                 // convert amplitudes into intensity (photons per steradian)
-                                                                I += F_cell * F_cell * F_latt * F_latt * source_fraction * capture_fraction * omega_pixel;
+                                                                I += F_cell * F_cell * F_latt * F_latt * source_fraction * capture_fraction * omega_pixel; LOOK_INTO(I)
                                                                 omega_sub_reduction += omega_pixel;
                                                         }
                                                         // end of mosaic loop
@@ -341,7 +344,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                         // end of sub-pixel y loop
                 }
                 // end of sub-pixel x loop
-                const double photons = I_bg + (r_e_sqr * spot_scale * fluence * polar * I) / steps;
+                const double photons = I_bg + (r_e_sqr * spot_scale * fluence * polar * I) / steps; LOOK_INTO(photons)
                 floatimage( pixIdx ) = photons;
                 omega_reduction( pixIdx ) = omega_sub_reduction; // shared contention
                 max_I_x_reduction( pixIdx ) = max_I_x_sub_reduction;
