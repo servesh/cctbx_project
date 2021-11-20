@@ -12,6 +12,9 @@ using simtbx::nanoBragg::TOPHAT;
 #define LOOK_INTO(var) if (pixIdx == 297053) \
         { printf("%d (%s): %.9E \n", __LINE__, #var, var); }
 
+#define LOOK_INTO_INT(var) if (pixIdx == 297053) \
+        { printf("%d (%s): %d \n", __LINE__, #var, var); }
+
 void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
     int roi_ymin, int roi_ymax, int oversample, int point_pixel,
     CUDAREAL pixel_size, CUDAREAL subpixel_size, int steps, CUDAREAL detector_thickstep,
@@ -148,9 +151,15 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                         if (point_pixel) {
                                                 omega_pixel = 1.0 / airpath / airpath;
                                         } LOOK_INTO(omega_pixel)
+                                        LOOK_INTO_INT(point_pixel)
+                                        LOOK_INTO(pixel_size)
+                                        LOOK_INTO(close_distance)
 
                                         // now calculate detector thickness effects
                                         CUDAREAL capture_fraction = 1.0;
+                                        LOOK_INTO_INT(thick_tic)
+                                        LOOK_INTO(detector_thickstep)
+                                        LOOK_INTO(detector_mu)
                                         if (detector_thick > 0.0 && detector_mu> 0.0) {
                                                 // inverse of effective thickness increase
                                                 CUDAREAL odet[4];
@@ -158,6 +167,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 odet[2] = odet_vector(2);
                                                 odet[3] = odet_vector(3);
                                                 CUDAREAL parallax = dot_product(odet, diffracted);
+                                                LOOK_INTO(parallax)
                                                 capture_fraction = exp(-thick_tic * detector_thickstep / detector_mu / parallax)
                                                                 - exp(-(thick_tic + 1) * detector_thickstep / detector_mu / parallax);
                                         } LOOK_INTO(capture_fraction)
