@@ -159,6 +159,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                         CUDAREAL capture_fraction = 1.0;
                                         LOOK_INTO_INT(thick_tic)
                                         LOOK_INTO(detector_thickstep)
+                                        LOOK_INTO(detector_thick)
                                         LOOK_INTO(detector_mu)
                                         if (detector_thick > 0.0 && detector_mu> 0.0) {
                                                 // inverse of effective thickness increase
@@ -308,7 +309,10 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 }
                                                                 if (xtal_shape == GAUSS_ARGCHK) {
                                                                         // fudge the radius so that volume and FWHM are similar to square_xtal spots
-                                                                        double my_arg = hrad_sqr / 0.63 * fudge;
+                                                                        double my_arg = hrad_sqr / 0.63 * fudge; 
+                                                                        LOOK_INTO(my_arg)
+                                                                        LOOK_INTO(hrad_sqr)
+                                                                        LOOK_INTO(fudge)
                                                                         if (my_arg<35.){ F_latt = Na * Nb * Nc * exp(-(my_arg));
                                                                         } else { F_latt = 0.; } // warps coalesce when blocks of 32 pixels have no Bragg signal
                                                                 }
@@ -338,7 +342,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 } LOOK_INTO(F_cell)
 
                                                                 // now we have the structure factor for this pixel
-
+                                                                LOOK_INTO(capture_fraction)
                                                                 // convert amplitudes into intensity (photons per steradian)
                                                                 I += F_cell * F_cell * F_latt * F_latt * source_fraction * capture_fraction * omega_pixel; LOOK_INTO(I)
                                                                 omega_sub_reduction += omega_pixel;
