@@ -15,6 +15,10 @@ using simtbx::nanoBragg::TOPHAT;
 #define LOOK_INTO_INT(var) if (pixIdx == 297053) \
         { printf("%d (%s): %d \n", __LINE__, #var, var); }
 
+#define LOOK_INTO_VEC(var) if (pixIdx == 297053) \
+        { printf("%d (%s): [%.9E, %.9E, %.9E, %.9E] \n", __LINE__, #var, var[0], var[1], var[2], var[3]); }
+
+
 void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
     int roi_ymin, int roi_ymax, int oversample, int point_pixel,
     CUDAREAL pixel_size, CUDAREAL subpixel_size, int steps, CUDAREAL detector_thickstep,
@@ -138,12 +142,14 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 rotate_axis(dbvector, newvector, sdet_vector, pixel_pos[2] / distance);
                                                 rotate_axis(newvector, pixel_pos, fdet_vector, pixel_pos[3] / distance);
                                                 // rotate(vector,pixel_pos,0,pixel_pos[3]/distance,pixel_pos[2]/distance);
-                                        }
+                                        } LOOK_INTO_VEC(pixel_pos)
 
                                         // construct the diffracted-beam unit vector to this sub-pixel
                                         //CUDAREAL * diffracted = tmpVector2;
                                         CUDAREAL diffracted[4];
-                                        CUDAREAL airpath = unitize(pixel_pos, diffracted); LOOK_INTO(airpath)
+                                        CUDAREAL airpath = unitize(pixel_pos, diffracted);
+                                        LOOK_INTO(airpath)
+                                        LOOK_INTO_VEC(diffracted)
 
                                         // solid angle subtended by a pixel: (pix/airpath)^2*cos(2theta)
                                         CUDAREAL omega_pixel = pixel_size * pixel_size / airpath / airpath * close_distance / airpath;
@@ -170,6 +176,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                 odet[3] = odet_vector(3);
                                                 CUDAREAL parallax = dot_product(odet, diffracted);
                                                 LOOK_INTO(parallax)
+                                                LOOK_INTO_VEC(odet)
                                                 capture_fraction = exp(-thick_tic * detector_thickstep / detector_mu / parallax)
                                                                 - exp(-(thick_tic + 1) * detector_thickstep / detector_mu / parallax);
                                         } 
@@ -189,13 +196,15 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
 
                                                 // construct the incident beam unit vector while recovering source distance
                                                 // TODO[Giles]: Optimization! We can unitize the source vectors before passing them in.
+                                                LOOK_INTO_VEC(incident)
                                                 unitize(incident, incident);
-
+                                                LOOK_INTO_VEC(incident)
                                                 // construct the scattering vector for this pixel
                                                 CUDAREAL scattering[4];
                                                 scattering[1] = (diffracted[1] - incident[1]) / lambda;
                                                 scattering[2] = (diffracted[2] - incident[2]) / lambda;
                                                 scattering[3] = (diffracted[3] - incident[3]) / lambda;
+                                                LOOK_INTO_VEC(scattering)
 
                                                 #ifdef __CUDA_ARCH__
                                                 CUDAREAL stol = 0.5 * norm3d(scattering[1], scattering[2], scattering[3]);
@@ -230,6 +239,9 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                         rotate_axis(a0, ap, spindle_vector, phi);
                                                         rotate_axis(b0, bp, spindle_vector, phi);
                                                         rotate_axis(c0, cp, spindle_vector, phi);
+                                                        LOOK_INTO_VEC(ap)
+                                                        LOOK_INTO_VEC(bp)
+                                                        LOOK_INTO_VEC(cp)
 
                                                         // enumerate mosaic domains
                                                         for (int mos_tic = 0; mos_tic < mosaic_domains; ++mos_tic) {
@@ -263,10 +275,11 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                         c[2] = cp[2];
                                                                         c[3] = cp[3];                                                                       
                                                                 }
-
+                                                                LOOK_INTO_VEC(a)
+                                                                LOOK_INTO_VEC(b)
+                                                                LOOK_INTO_VEC(c)
 
                                                                 // construct fractional Miller indicies
-
                                                                 CUDAREAL h = dot_product(a, scattering); LOOK_INTO(h)
                                                                 CUDAREAL k = dot_product(b, scattering); LOOK_INTO(k)
                                                                 CUDAREAL l = dot_product(c, scattering); LOOK_INTO(l)
