@@ -220,7 +220,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
 
                                                 // sweep over phi angles
                                                 for (int phi_tic = 0; phi_tic < phisteps; ++phi_tic) {
-                                                        CUDAREAL phi = phistep * phi_tic + phi0;
+                                                        CUDAREAL phi = phistep * phi_tic + phi0; LOOK_INTO(phi)
 
                                                         CUDAREAL ap[4];
                                                         CUDAREAL bp[4];
@@ -267,9 +267,9 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
 
                                                                 // construct fractional Miller indicies
 
-                                                                CUDAREAL h = dot_product(a, scattering);
-                                                                CUDAREAL k = dot_product(b, scattering);
-                                                                CUDAREAL l = dot_product(c, scattering);
+                                                                CUDAREAL h = dot_product(a, scattering); LOOK_INTO(h)
+                                                                CUDAREAL k = dot_product(b, scattering); LOOK_INTO(k)
+                                                                CUDAREAL l = dot_product(c, scattering); LOOK_INTO(l)
 
                                                                 // round off to nearest whole index
                                                                 int h0 = ceil(h - 0.5);
@@ -280,7 +280,7 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                 // F_latt = sin(M_PI*s_Na*h)*sin(M_PI*s_Nb*k)*sin(M_PI*s_Nc*l)/sin(M_PI*h)/sin(M_PI*k)/sin(M_PI*l);
                                                                 
                                                                 CUDAREAL F_latt = 1.0; // Shape transform for the crystal.
-                                                                CUDAREAL hrad_sqr = 0.0;
+                                                                CUDAREAL hradSqr = 0.0;
 
                                                                 if (xtal_shape == SQUARE) {
                                                                         // xtal is a paralelpiped
@@ -298,31 +298,32 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
                                                                         }
                                                                 } else {
                                                                         // handy radius in reciprocal space, squared
-                                                                        hrad_sqr = (h - h0) * (h - h0) * Na * Na + (k - k0) * (k - k0) * Nb * Nb + (l - l0) * (l - l0) * Nc * Nc;
+                                                                        hradSqr = (h - h0) * (h - h0) * Na * Na + (k - k0) * (k - k0) * Nb * Nb + (l - l0) * (l - l0) * Nc * Nc;
                                                                 }
+                                                                LOOK_INTO(hradSqr)
                                                                 if (xtal_shape == ROUND) {
                                                                         // use sinc3 for elliptical xtal shape,
                                                                         // correcting for sqrt of volume ratio between cube and sphere
-                                                                        F_latt = Na * Nb * Nc * 0.723601254558268 * sinc3(M_PI * sqrt(hrad_sqr * fudge));
+                                                                        F_latt = Na * Nb * Nc * 0.723601254558268 * sinc3(M_PI * sqrt(hradSqr * fudge));
                                                                 }
                                                                 if (xtal_shape == GAUSS) {
                                                                         // fudge the radius so that volume and FWHM are similar to square_xtal spots
-                                                                        F_latt = Na * Nb * Nc * exp(-(hrad_sqr / 0.63 * fudge));
-                                                                        LOOK_INTO(hrad_sqr)
+                                                                        F_latt = Na * Nb * Nc * exp(-(hradSqr / 0.63 * fudge));
+                                                                        LOOK_INTO(hradSqr)
                                                                         LOOK_INTO(fudge)
                                                                 }
                                                                 if (xtal_shape == GAUSS_ARGCHK) {
                                                                         // fudge the radius so that volume and FWHM are similar to square_xtal spots
-                                                                        double my_arg = hrad_sqr / 0.63 * fudge; 
+                                                                        double my_arg = hradSqr / 0.63 * fudge; 
                                                                         LOOK_INTO(my_arg)
-                                                                        LOOK_INTO(hrad_sqr)
+                                                                        LOOK_INTO(hradSqr)
                                                                         LOOK_INTO(fudge)
                                                                         if (my_arg<35.){ F_latt = Na * Nb * Nc * exp(-(my_arg));
                                                                         } else { F_latt = 0.; } // warps coalesce when blocks of 32 pixels have no Bragg signal
                                                                 }
                                                                 if (xtal_shape == TOPHAT) {
                                                                         // make a flat-top spot of same height and volume as square_xtal spots
-                                                                        F_latt = Na * Nb * Nc * (hrad_sqr * fudge < 0.3969);
+                                                                        F_latt = Na * Nb * Nc * (hradSqr * fudge < 0.3969);
                                                                 }
                                                                 // no need to go further if result will be zero?
                                                                 if (F_latt == 0.0 && water_size == 0.0)
@@ -596,11 +597,11 @@ void debranch_maskall_Kernel(int npanels, int spixels, int fpixels, int total_pi
                                                                 // F_latt = sin(M_PI*s_Na*h)*sin(M_PI*s_Nb*k)*sin(M_PI*s_Nc*l)/sin(M_PI*h)/sin(M_PI*k)/sin(M_PI*l);
 
                                                                 CUDAREAL F_latt = 1.0; // Shape transform for the crystal.
-                                                                CUDAREAL hrad_sqr = 0.0;
+                                                                CUDAREAL hradSqr = 0.0;
                                                                 // handy radius in reciprocal space, squared
-                                                                hrad_sqr = (h - h0) * (h - h0) * Na * Na + (k - k0) * (k - k0) * Nb * Nb + (l - l0) * (l - l0) * Nc * Nc;
+                                                                hradSqr = (h - h0) * (h - h0) * Na * Na + (k - k0) * (k - k0) * Nb * Nb + (l - l0) * (l - l0) * Nc * Nc;
                                                                 // fudge the radius so that volume and FWHM are similar to square_xtal spots
-                                                                double my_arg = hrad_sqr / 0.63 * fudge;
+                                                                double my_arg = hradSqr / 0.63 * fudge;
                                                                 F_latt = Na * Nb * Nc * exp(-(my_arg));
 
                                                                 // structure factor of the unit cell
