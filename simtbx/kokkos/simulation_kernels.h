@@ -10,13 +10,13 @@ using simtbx::nanoBragg::GAUSS_ARGCHK;
 using simtbx::nanoBragg::TOPHAT;
 
 #define LOOK_INTO(var) if (pixIdx == 297053) \
-        { printf("%d (%s): %.9E \n", __LINE__, #var, var); }
+        { printf("%d (%s): %.16E \n", __LINE__, #var, var); }
 
 #define LOOK_INTO_INT(var) if (pixIdx == 297053) \
         { printf("%d (%s): %d \n", __LINE__, #var, var); }
 
 #define LOOK_INTO_VEC(var) if (pixIdx == 297053) \
-        { printf("%d (%s): [%.9E, %.9E, %.9E, %.9E] \n", __LINE__, #var, var[0], var[1], var[2], var[3]); }
+        { printf("%d (%s): [%.16E, %.16E, %.16E, %.16E] \n", __LINE__, #var, var[0], var[1], var[2], var[3]); }
 
 
 void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
@@ -56,6 +56,40 @@ void kokkosSpotsKernel(int spixels, int fpixels, int roi_xmin, int roi_xmax,
         const int s_h_max = s_h_min + s_h_range - 1;
         const int s_k_max = s_k_min + s_k_range - 1;
         const int s_l_max = s_l_min + s_l_range - 1;
+
+        Kokkos::parallel_for("printer", 1, KOKKOS_LAMBDA(const int& index){
+            
+            for (int i=0; i<4; ++i) {
+              printf("sdet(%d)=%.15E\n",i,sdet_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("fdet(%d)=%.15E\n",i,fdet_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("odet(%d)=%.15E\n",i,odet_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("pix0(%d)=%.15E\n",i,pix0_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("beam(%d)=%.15E\n",i,beam_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("polar(%d)=%.15E\n",i,polar_vector(i));
+            }
+            for (int i=0; i<4; ++i) {
+              printf("spindle(%d)=%.15E\n",i,spindle_vector(i));
+            }            
+            
+            printf("Xbeam = %.15E\n", Xbeam);
+            printf("Ybeam = %.15E\n", Ybeam);
+            printf("V_cell = %.15E\n", V_cell);
+            printf("water_size = %.15E\n", water_size);
+            printf("water_F = %.15E\n", water_F);
+            printf("water_MW = %.15E\n", water_MW);
+            printf("fluence = %.15E\n", fluence);
+
+        });
 
 
 

@@ -37,7 +37,7 @@ void print_view(const view_1d_t<T> &arg_view, size_t arg_first, size_t arg_last)
   Kokkos::parallel_for("print_view",
                         range_policy(arg_first, arg_last),
                         KOKKOS_LAMBDA (const int i) {
-    printf(" P[ %d ] = '%f'\n", i, (double) arg_view(i) );
+    printf(" P[ %d ] = '%E'\n", i, (double) arg_view(i) );
   });
   Kokkos::fence();
 }
